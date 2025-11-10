@@ -95,7 +95,10 @@ function HH.HookWheel()
       UTILITY_WHEEL_GAMEPAD.menu.AddEntry = function(Self, name, inactiveIcon, activeIcon, callback, data)
         local Category = UTILITY_WHEEL_GAMEPAD:GetHotbarCategory()
         local Index = tonumber(data.slotNum)
-        local New = HH.SV.Command[Category][Index]
+        local New
+        if HH.SV.Command[Category] then
+          New = HH.SV.Command[Category][Index]
+        end
         if New then
           Old(Self, New.name, New.icon, New.icon, function() HH.Execute(New.house, New.exterior, New.houseOwner) end, {name = New.name, slotNum = Index})
         else
@@ -108,7 +111,10 @@ function HH.HookWheel()
     UTILITY_WHEEL_KEYBOARD.menu.AddEntry = function(Self, name, inactiveIcon, activeIcon, callback, data)
       local Category = UTILITY_WHEEL_KEYBOARD:GetHotbarCategory()
       local Index = tonumber(data.slotNum)
-      local New = HH.SV.Command[Category][Index]
+      local New
+      if HH.SV.Command[Category] then
+        New = HH.SV.Command[Category][Index]
+      end
       if New then
         Old(Self, New.name, New.icon, New.icon, function() HH.Execute(New.house, New.exterior, New.houseOwner) end, {name = New.name, slotNum = Index})
       else
