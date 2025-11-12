@@ -67,6 +67,7 @@ local function OnAddOnLoaded(eventCode, addonName)
   
   --Hook Wheels
   HH.HookWheel()
+  EVENT_MANAGER:RegisterForEvent("HouseHotkey_PlayerActivated", EVENT_PLAYER_ACTIVATED, OnPlayerActivated)
 
 end
 
@@ -289,6 +290,8 @@ local LAM = LibHarvensAddonSettings
 
 function HH.BuildMenu()
   local houseItems = HH.GetHouseDropdownChoices()
+  local HH_Lang = HH.Lang
+  local HH_Part = HH.Part
 
   local panel = LAM:AddAddon(HH.Name, {
     allowDefaults = false,  -- Show "Reset to Defaults" button
@@ -300,7 +303,7 @@ function HH.BuildMenu()
   local Category2, CategoryName2, EntryIndex2, EntryIndexName2
   panel:AddSetting {
     type = LAM.ST_CHECKBOX,
-    label = HH.Lang.CHARACTER_SETTING,
+    label = HH_Lang.CHARACTER_SETTING,
     getFunction = function() return HH.CV.CV end,
     setFunction = function(var)
       HH.CV.CV = var
@@ -310,13 +313,13 @@ function HH.BuildMenu()
   --Create QuickSlot
   panel:AddSetting {
     type = LAM.ST_SECTION,
-    label = HH.Lang.CREATE_QUICKSLOT,
+    label = HH_Lang.CREATE_QUICKSLOT,
   }
 if #houseItems > 0 then
   --Category
   panel:AddSetting {
     type = LAM.ST_DROPDOWN,
-    label = HH.Lang.WHEEL_CATEGORY,
+    label = HH_Lang.WHEEL_CATEGORY,
     items = {
       { name = GetString(SI_HOTBARCATEGORY10), data = HOTBAR_CATEGORY_QUICKSLOT_WHEEL},
       { name = GetString(SI_HOTBARCATEGORY13), data = HOTBAR_CATEGORY_ALLY_WHEEL},
@@ -334,7 +337,7 @@ if #houseItems > 0 then
   --Index
   panel:AddSetting {
     type = LAM.ST_DROPDOWN,
-    label = HH.Lang.WHEEL_SLOT,
+    label = HH_Lang.WHEEL_SLOT,
     items = {
       { name = "1 - N", data = 4 },
       { name = "2 - NW", data = 5 },
@@ -355,7 +358,7 @@ if #houseItems > 0 then
   --Icon Select
   panel:AddSetting {
     type = LAM.ST_ICONPICKER,
-    label = HH.Lang.WHEEL_ICON,
+    label = HH_Lang.WHEEL_ICON,
     items = HH.IconList,
     getFunction = function() return Icon  end,
     setFunction = function(var, iconIndex, iconPath)
@@ -366,7 +369,7 @@ if #houseItems > 0 then
   --Name
   panel:AddSetting {
     type = LAM.ST_EDIT,
-    label = HH.Lang.WHEEL_NAME,
+    label = HH_Lang.WHEEL_NAME,
     getFunction = function() return Name or "" end,
     setFunction = function(text) Name = text end,
     default = " "
@@ -375,7 +378,7 @@ if #houseItems > 0 then
   --House Choice
   panel:AddSetting {
     type = LAM.ST_DROPDOWN,
-    label = HH.Lang.HOUSE,
+    label = HH_Lang.HOUSE,
     items = houseItems,
     getFunction = function()
       return HouseName
@@ -393,14 +396,14 @@ if #houseItems > 0 then
       if HouseOwner ~= "self" then
         return HouseOwner or " "
       end
-      return HH.Lang.HOUSE_COLLECTED or " "
+      return HH_Lang.HOUSE_COLLECTED or " "
     end
   }
 
   --Jump to Interior or Exterior
   panel:AddSetting {
     type = LAM.ST_CHECKBOX,
-    label = HH.Lang.HOUSE_EXTERIOR,
+    label = HH_Lang.HOUSE_EXTERIOR,
     getFunction = function() return UseExterior or false end,
     setFunction = function(var)
       UseExterior = var
@@ -410,11 +413,11 @@ if #houseItems > 0 then
   --Apply
   panel:AddSetting {
     type = LAM.ST_BUTTON,
-    label = HH.Lang.WHEEL_APPLY,
-    buttonText = HH.Lang.WHEEL_APPLY,
+    label = HH_Lang.WHEEL_APPLY,
+    buttonText = HH_Lang.WHEEL_APPLY,
     clickHandler  = function()
       if not Name or Name == "" then
-        Status = HH.Lang.STATUS_NO_NAME
+        Status = HH_Lang.STATUS_NO_NAME
       else
         HH.SV.Command[Category or HOTBAR_CATEGORY_QUICKSLOT_WHEEL][EntryIndex or 4] = {
           ["name"] = Name,
@@ -440,17 +443,17 @@ if #houseItems > 0 then
     --Configured
     panel:AddSetting {
       type = LAM.ST_SECTION,
-      label = HH.Lang.WHEEL_DESC,
+      label = HH_Lang.WHEEL_DESC,
     }
     panel:AddSetting {
       type = LAM.ST_LABEL,
       label = function()
         return table.concat({
-          HH.Part(HOTBAR_CATEGORY_QUICKSLOT_WHEEL),
-          HH.Part(HOTBAR_CATEGORY_ALLY_WHEEL),
-          HH.Part(HOTBAR_CATEGORY_MEMENTO_WHEEL),
-          HH.Part(HOTBAR_CATEGORY_TOOL_WHEEL),
-          HH.Part(HOTBAR_CATEGORY_EMOTE_WHEEL)
+          HH_Part(HOTBAR_CATEGORY_QUICKSLOT_WHEEL),
+          HH_Part(HOTBAR_CATEGORY_ALLY_WHEEL),
+          HH_Part(HOTBAR_CATEGORY_MEMENTO_WHEEL),
+          HH_Part(HOTBAR_CATEGORY_TOOL_WHEEL),
+          HH_Part(HOTBAR_CATEGORY_EMOTE_WHEEL)
         })
       end
     }
@@ -458,7 +461,7 @@ if #houseItems > 0 then
   --Category
   panel:AddSetting {
     type = LAM.ST_DROPDOWN,
-    label = HH.Lang.WHEEL_CATEGORY,
+    label = HH_Lang.WHEEL_CATEGORY,
     items = {
       { name = GetString(SI_HOTBARCATEGORY10), data = HOTBAR_CATEGORY_QUICKSLOT_WHEEL},
       { name = GetString(SI_HOTBARCATEGORY13), data = HOTBAR_CATEGORY_ALLY_WHEEL},
@@ -476,7 +479,7 @@ if #houseItems > 0 then
   --Index
   local entryIndexDropdown = panel:AddSetting {
     type = LAM.ST_DROPDOWN,
-    label = HH.Lang.WHEEL_SLOT,
+    label = HH_Lang.WHEEL_SLOT,
     items = {
       { name = "1 - N", data = 4 },
       { name = "2 - NW", data = 5 },
@@ -496,8 +499,8 @@ if #houseItems > 0 then
   --Empty
   panel:AddSetting {
     type = LAM.ST_BUTTON,
-    label = HH.Lang.WHEEL_EMPTY,
-    buttonText = HH.Lang.WHEEL_EMPTY,
+    label = HH_Lang.WHEEL_EMPTY,
+    buttonText = HH_Lang.WHEEL_EMPTY,
     clickHandler = function()
       HH.SV.Command[Category2 or HOTBAR_CATEGORY_QUICKSLOT_WHEEL] = {}
       panel:UpdateControls()
@@ -506,8 +509,8 @@ if #houseItems > 0 then
   --Delete
   panel:AddSetting {
     type = LAM.ST_BUTTON,
-    label = HH.Lang.WHEEL_DELETE,
-    buttonText = HH.Lang.WHEEL_DELETE,
+    label = HH_Lang.WHEEL_DELETE,
+    buttonText = HH_Lang.WHEEL_DELETE,
     clickHandler = function()
       if EntryIndex2 then
         HH.SV.Command[Category2 or HOTBAR_CATEGORY_QUICKSLOT_WHEEL][EntryIndex2] = nil
@@ -522,17 +525,17 @@ if #houseItems > 0 then
     --Configured
     panel:AddSetting {
       type = LAM.ST_SECTION,
-      label = HH.Lang.WHEEL_DESC,
+      label = HH_Lang.WHEEL_DESC,
     }
     panel:AddSetting {
       type = LAM.ST_LABEL,
       label = function()
         return table.concat({
-          HH.Part(HOTBAR_CATEGORY_QUICKSLOT_WHEEL),
-          HH.Part(HOTBAR_CATEGORY_ALLY_WHEEL),
-          HH.Part(HOTBAR_CATEGORY_MEMENTO_WHEEL),
-          HH.Part(HOTBAR_CATEGORY_TOOL_WHEEL),
-          HH.Part(HOTBAR_CATEGORY_EMOTE_WHEEL)
+          HH_Part(HOTBAR_CATEGORY_QUICKSLOT_WHEEL),
+          HH_Part(HOTBAR_CATEGORY_ALLY_WHEEL),
+          HH_Part(HOTBAR_CATEGORY_MEMENTO_WHEEL),
+          HH_Part(HOTBAR_CATEGORY_TOOL_WHEEL),
+          HH_Part(HOTBAR_CATEGORY_EMOTE_WHEEL)
         })
       end
     }
@@ -545,11 +548,10 @@ if #houseItems > 0 then
   else
     panel:AddSetting {
       type = LAM.ST_LABEL,
-      label = HH.Lang.NO_HOUSES,
+      label = HH_Lang.NO_HOUSES,
     }
   end
 end
 
 -- Start Here
 EVENT_MANAGER:RegisterForEvent(HH.Name, EVENT_ADD_ON_LOADED, OnAddOnLoaded)
-EVENT_MANAGER:RegisterForEvent("HouseHotkey_PlayerActivated", EVENT_PLAYER_ACTIVATED, OnPlayerActivated)
