@@ -55,6 +55,16 @@ local PREVIEW_PRELOADED_HOUSES = {
   
 --]]
 
+
+local function OnPlayerActivated(eventCode)
+    EVENT_MANAGER:UnregisterForEvent("HouseHotkey_PlayerActivated", EVENT_PLAYER_ACTIVATED)
+    local currentSearchState = HOUSE_TOURS_SEARCH_MANAGER:GetSearchState(HOUSE_TOURS_LISTING_TYPE_FAVORITE)
+    if currentSearchState ~= ZO_HOUSE_TOURS_SEARCH_STATES.COMPLETE then
+        HOUSE_TOURS_SEARCH_MANAGER:ExecuteSearch(HOUSE_TOURS_LISTING_TYPE_FAVORITE)
+    end
+    zo_callLater(HH.BuildMenu, 1500)
+end
+
 --When Loaded
 local function OnAddOnLoaded(eventCode, addonName)
   if addonName ~= HH.Name then return end
@@ -69,15 +79,6 @@ local function OnAddOnLoaded(eventCode, addonName)
   HH.HookWheel()
   EVENT_MANAGER:RegisterForEvent("HouseHotkey_PlayerActivated", EVENT_PLAYER_ACTIVATED, OnPlayerActivated)
 
-end
-
-local function OnPlayerActivated(eventCode)
-    EVENT_MANAGER:UnregisterForEvent("HouseHotkey_PlayerActivated", EVENT_PLAYER_ACTIVATED)
-    local currentSearchState = HOUSE_TOURS_SEARCH_MANAGER:GetSearchState(HOUSE_TOURS_LISTING_TYPE_FAVORITE)
-    if currentSearchState ~= ZO_HOUSE_TOURS_SEARCH_STATES.COMPLETE then
-        HOUSE_TOURS_SEARCH_MANAGER:ExecuteSearch(HOUSE_TOURS_LISTING_TYPE_FAVORITE)
-    end
-    zo_callLater(HH.BuildMenu, 1500)
 end
 
 --Account/Character Setting
