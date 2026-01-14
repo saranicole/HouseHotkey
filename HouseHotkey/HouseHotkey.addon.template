@@ -1,6 +1,6 @@
 ## Title: House Hotkey
 ## Author: thisbeaurielle
-## Version: 1.5.9
+## Version: ${ADDON_VERSION}
 ## APIVersion: 101048 101049
 ## AddOnVersion: 1
 ## SavedVariables: HouseHotkey_Vars
