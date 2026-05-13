@@ -69,10 +69,12 @@ local slotOptions = {
       { name = "8 - NE", data = 3 },
     }
     
-local function getSelectedHouse()
+local function getSelectedHouse(data)
     local house
-    if GAMEPAD_COLLECTIONS_BOOK.currentList and GAMEPAD_COLLECTIONS_BOOK.currentList.list then 
-      selectedItem = GAMEPAD_COLLECTIONS_BOOK:GetCurrentTargetData()
+    if data then
+      house = ZO_COLLECTIBLE_DATA_MANAGER:GetCollectibleDataById(data.dataSource.collectibleId)
+    elseif GAMEPAD_COLLECTIONS_BOOK and GAMEPAD_COLLECTIONS_BOOK.collectionList and GAMEPAD_COLLECTIONS_BOOK.collectionList.list then
+      selectedItem = GAMEPAD_COLLECTIONS_BOOK.collectionList.list:GetTargetData()
       if selectedItem and selectedItem.dataSource.categoryData and selectedItem.dataSource.categoryData.IsHousingCategory and not selectedItem.dataSource:IsLocked() then
         house = ZO_COLLECTIBLE_DATA_MANAGER:GetCollectibleDataById(selectedItem.dataSource.collectibleId)
       end
@@ -80,12 +82,15 @@ local function getSelectedHouse()
     return house
 end
 
-HH.selectedHouse = getSelectedHouse()
+HH.selectedHouse = nil
 
 function HH.AddAssignHouse(newState)
   local HH_Lang = HH.Lang
   local UseExterior = false
   local Icon, IconName, Category, CategoryName, SlotNum
+  
+  HH.selectedHouse = getSelectedHouse()
+  
   HH.assignHouse = HH:CreateDialog(HH.Lang.HOTBAR_OPTIONS)
 
   HH.assignHouse:AddSetting {
@@ -94,10 +99,14 @@ function HH.AddAssignHouse(newState)
       return HH_Lang.CREATE_QUICKSLOT
     end,
   }
+
   HH.assignHouse:AddSetting {
     type = LAM.ST_LABEL,
     label = function()
-      return "|cebc034"..HH.selectedHouse:GetFormattedName().."|r"
+      if HH.selectedHouse and HH.selectedHouse:GetFormattedName() then
+        return "|cebc034"..HH.selectedHouse:GetFormattedName().."|r"
+      end
+      return ""
     end,
   }
   
@@ -164,13 +173,24 @@ function HH.AddAssignHouse(newState)
     buttonText = HH_Lang.WHEEL_APPLY,
     clickHandler  = function()
       HH.SV.Command[Category or HOTBAR_CATEGORY_QUICKSLOT_WHEEL][EntryIndex or 4] = {
-        ["name"] = Name,
+        ["name"] = HH.selectedHouse:GetFormattedName(),
         ["icon"] = IconName or HH.IconList[1],
         ["house"] = HH.selectedHouse:GetReferenceId(),
         ["exterior"] = UseExterior or false,
         ["houseName"] = HH.selectedHouse:GetFormattedName(),
         ["houseOwner"] = HH.selectedHouse.owner or "self",
+        ["slotNum"] = EntryIndex
       }
+      if LRM ~= nil then
+        HH.AssignLRM(
+          HH.selectedHouse:GetFormattedName(), 
+          HH.selectedHouse:GetReferenceId(), 
+          IconName or HH.IconList[1], 
+          HH.selectedHouse.owner or "self", 
+          UseExterior, 
+          EntryIndex
+        )
+      end
       Status = HH.Lang.STATUS_ADDED
       HH.assignHouse:UpdateControls()
     end
@@ -205,8 +225,8 @@ function HH.AddAssignHouse(newState)
         },
       }
     KEYBIND_STRIP:AddKeybindButtonGroup(HH.assign)
-    GAMEPAD_COLLECTIONS_BOOK.currentList.list:SetOnSelectedDataChangedCallback(function()
-        HH.selectedHouse = getSelectedHouse()
+    GAMEPAD_COLLECTIONS_BOOK.currentList.list:SetOnSelectedDataChangedCallback(function(list, selectedData)
+        HH.selectedHouse = getSelectedHouse(selectedData)
         KEYBIND_STRIP:UpdateKeybindButtonGroup(HH.assign)
     end)
 end

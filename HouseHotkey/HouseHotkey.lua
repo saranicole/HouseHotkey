@@ -32,7 +32,7 @@ local wheelOptions = {
 }
 
 if LRM ~= nil then
-  table.insert(wheelOptions, { name = string.format("SI_HOTBARCATEGORY%d",LIBRADIAL_WHEEL), data = LIBRADIAL_WHEEL})
+  table.insert(wheelOptions, { name = HH.Lang.LRM_WHEEL, data = LIBRADIAL_WHEEL})
 end
 
 local PREVIEW_PRELOADED_HOUSES = {
@@ -122,13 +122,15 @@ local function sanitize(str)
 end
 
 function HH.AssignLRM(name, houseId, icon, owner, UseExterior, slotnum)
-  UseExterior = UseExterior or false
-  local index = slotnum or #LRM.registeredEntries + 1
-  LRM:RegisterEntry(HH.Name, name, houseId, icon, function() HH.Execute(houseId, UseExterior, owner) end, name)        
-  LRM.libRadialWheelEntries[index] = {
-    entry = houseId,
-    addon = HH.Name
-  }
+  local details = ""
+  if owner == "self" then
+    details = details..GetDisplayName()
+  end
+  if UseExterior then
+    details = details.." - "..HH.Lang.HOUSE_OUTSIDE
+  end
+  LRM:RegisterEntry(HH.Name, name, houseId, icon, function() HH.Execute(houseId, UseExterior, owner) end, details)        
+  LRM.libRadialWheelEntries[slotnum] = {addon = HH.Name, entry = houseId}
 end
 
 function HH.showAssignOnHousing(oldState, newState)
@@ -150,8 +152,6 @@ function HH.HookWheel()
         end
         if New and Category ~= LIBRADIAL_WHEEL then
           Old(Self, New.name, New.icon, New.icon, function() HH.Execute(New.house, New.exterior, New.houseOwner) end, {name = New.name, slotNum = Index})
-        elseif New and Category == LIBRADIAL_WHEEL then
-          HH.AssignLRM( New.name, New.house, New.icon, New.houseOwner, New.exterior, Index)
         else
           Old(Self, name, inactiveIcon, activeIcon, callback, data)
         end
@@ -168,9 +168,6 @@ function HH.HookWheel()
       end
       if New and Category ~= LIBRADIAL_WHEEL then
         Old(Self, New.name, New.icon, New.icon, function() HH.Execute(New.house, New.exterior, New.houseOwner) end, {name = New.name, slotNum = Index})
-      elseif New and Category == LIBRADIAL_WHEEL then
-        local entryId = sanitize(New.name..New.house..New.houseOwner)
-        LRM:RegisterEntry(randomAddonId, New.name, entryId, New.icon, function() HH.Execute(New.house, New.exterior, New.houseOwner) end, New.house)
       else
         Old(Self, name, inactiveIcon, activeIcon, callback, data)
       end
@@ -307,9 +304,6 @@ function HH.Part(Index)
   local Positons = {"1 - N    ", "2 - NW", "3 - W   ", "4 - SW", "5 - S    ", "6 - SE  ", "7 - E    ", "8 - NE "}
   local Order = {4, 5, 6, 7, 8, 1, 2, 3}
   local StringList = {SI_HOTBARCATEGORY10, SI_HOTBARCATEGORY11, SI_HOTBARCATEGORY12, SI_HOTBARCATEGORY13, SI_HOTBARCATEGORY14}
-  if LRM then
-    table.insert(StringList, string.format("SI_HOTBARCATEGORY%d",LIBRADIAL_WHEEL))
-  end
   
   local Tep = GetString(StringList[Index - 9]).."\r\n  "
   if HH.SV.Command[Index] then
@@ -357,9 +351,6 @@ function HH.BuildMenu()
     HH_Part(HOTBAR_CATEGORY_TOOL_WHEEL),
     HH_Part(HOTBAR_CATEGORY_EMOTE_WHEEL)
   }
-  if LRM ~= nil then
-    table.insert(parts, HH_Part(LIBRADIAL_WHEEL))
-  end
 
   local panel = LAM:AddAddon(HH.Name, {
     allowDefaults = false,  -- Show "Reset to Defaults" button
@@ -588,6 +579,12 @@ if #houseItems > 0 then
     panel:AddSetting {
       type = LAM.ST_LABEL,
       label = HH_Lang.NO_HOUSES,
+    }
+  end
+  if LRM ~= nil then
+    panel:AddSetting {
+      type = LAM.ST_LABEL,
+      label = "|c34abeb"..HH_Lang.MODIFY_LRM.."|r"
     }
   end
 end
