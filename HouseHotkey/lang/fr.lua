@@ -26,4 +26,6 @@ HH.Lang = {
 
   STATUS_NO_NAME =            "|cFF0000Titre requis!|r",
   STATUS_ADDED =              "|c008000Ajouté!|r",
+  ADD_TO_HOTBAR =             "Assign",
+  HOTBAR_OPTIONS =            "Quickslot Options",
 }

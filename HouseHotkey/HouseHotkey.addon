@@ -1,8 +1,8 @@
 ## Title: House Hotkey
 ## Author: thisbeaurielle
-## Version: ${ADDON_VERSION}
+## Version: 1
 ## APIVersion: 101049 101050
-## AddOnVersion: ${ADDON_FORMATTED_VERSION}
+## AddOnVersion: 1
 ## SavedVariables: HouseHotkey_Vars
 ## DependsOn: LibHarvensAddonSettings>=20007
 ## OptionalDependsOn: LibRadialMenu
