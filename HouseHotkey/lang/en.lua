@@ -28,4 +28,5 @@ HH.Lang = {
   STATUS_ADDED =              "|c008000Added!|r",
   ADD_TO_HOTBAR =             "Assign",
   HOTBAR_OPTIONS =            "Quickslot Options",
+  LRM_WHEEL =                 "Addon Entries",
 }

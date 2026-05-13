@@ -8,7 +8,7 @@
 ## OptionalDependsOn: LibRadialMenu
 
 HouseHotkeyGlobals.lua
-Console/ui.lua
-HouseHotkey.lua
 lang/en.lua
 lang/$(language).lua
+Console/ui.lua
+HouseHotkey.lua

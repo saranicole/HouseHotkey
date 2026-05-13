@@ -121,15 +121,12 @@ local function sanitize(str)
     return str
 end
 
-function HH.AssignLRM(house, UseExterior)
+function HH.AssignLRM(name, houseId, icon, owner, UseExterior, slotnum)
   UseExterior = UseExterior or false
-  local index = #LRM.registeredEntries + 1
-  if index == LRM.vars.numSlots then
-    index = 1
-  end
-  LRM:RegisterEntry(HH.Name, house.name, house:GetReferenceId(), "/esoui/art/collections/collections_tabicon_housing_up.dds", function() HH.Execute(house:GetReferenceId(), UseExterior, "self") end, house:GetFormattedName())        
+  local index = slotnum or #LRM.registeredEntries + 1
+  LRM:RegisterEntry(HH.Name, name, houseId, icon, function() HH.Execute(houseId, UseExterior, owner) end, name)        
   LRM.libRadialWheelEntries[index] = {
-    entry = house:GetReferenceId(),
+    entry = houseId,
     addon = HH.Name
   }
 end
@@ -154,8 +151,7 @@ function HH.HookWheel()
         if New and Category ~= LIBRADIAL_WHEEL then
           Old(Self, New.name, New.icon, New.icon, function() HH.Execute(New.house, New.exterior, New.houseOwner) end, {name = New.name, slotNum = Index})
         elseif New and Category == LIBRADIAL_WHEEL then
-          local entryId = sanitize(New.name..New.house..New.houseOwner)
-          LRM:RegisterEntry(HH.Name, New.name, entryId, New.icon, function() HH.Execute(New.house, New.exterior, New.houseOwner) end, New.house)
+          HH.AssignLRM( New.name, New.house, New.icon, New.houseOwner, New.exterior, Index)
         else
           Old(Self, name, inactiveIcon, activeIcon, callback, data)
         end
@@ -588,11 +584,6 @@ if #houseItems > 0 then
       end
     }
   end
-  --Breakpoint
-  panel:AddSetting {
-    type = LAM.ST_SECTION,
-    label = " ",
-  }
   else
     panel:AddSetting {
       type = LAM.ST_LABEL,

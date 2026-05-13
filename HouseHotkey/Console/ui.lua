@@ -1,84 +1,186 @@
 local HH = HouseHotkey
 
+local LAM = LibHarvensAddonSettings
+
+local LRM = LibRadialMenu
+
+local LIBRADIAL_WHEEL = HOTBAR_CATEGORY_MAX_VALUE + 100
+
+--Credit to LibConsoleDialogs for the technique
+local dialogSettings = LAM.AddonSettings:Subclass()
+
+function HH:CreateDialog(title)
+	local options = {
+		allowDefaults = true,
+		allowRefresh = false
+	}
+	local dialog = dialogSettings:New(title, options)
+	dialog.headerData = {titleText = title}
+	return dialog
+end
+
+HH.dialogCallStack = {}
+
+local orgSelect = dialogSettings.Select
+function dialogSettings:Show()
+	LAM:Initialize()
+	if self.container == nil then
+		self.container = LAM.container
+		self:InitHandlers()
+	end
+	if LAM.scene:IsShowing() and currentSettings then
+		HH.dialogCallStack[#HH.dialogCallStack + 1] = currentSettings
+	end
+	orgSelect(self)
+	if self.selected then
+		currentSettings = self
+	end
+
+	ZO_GamepadGenericHeader_RefreshData(LAM.scrollList.header, self.headerData)
+
+	if LAM.scene:IsShowing() then
+		self:RefreshSelection()
+	else
+		SCENE_MANAGER:Push(LAM.scene:GetName())
+	end
+end
+
+local wheelOptions = {
+  { name = GetString(SI_HOTBARCATEGORY10), data = HOTBAR_CATEGORY_QUICKSLOT_WHEEL},
+  { name = GetString(SI_HOTBARCATEGORY13), data = HOTBAR_CATEGORY_ALLY_WHEEL},
+  { name = GetString(SI_HOTBARCATEGORY12), data = HOTBAR_CATEGORY_MEMENTO_WHEEL},
+  { name = GetString(SI_HOTBARCATEGORY14), data = HOTBAR_CATEGORY_TOOL_WHEEL},
+  { name = GetString(SI_HOTBARCATEGORY11), data = HOTBAR_CATEGORY_EMOTE_WHEEL},
+}
+
+
+if LRM ~= nil then
+  table.insert(wheelOptions, { name = HH.Lang.LRM_WHEEL, data = LIBRADIAL_WHEEL})
+end
+
+local slotOptions = {
+      { name = "1 - N", data = 4 },
+      { name = "2 - NW", data = 5 },
+      { name = "3 - W", data = 6 },
+      { name = "4 - SW", data = 7 },
+      { name = "5 - S", data = 8 },
+      { name = "6 - SE", data = 1 },
+      { name = "7 - E", data = 2 },
+      { name = "8 - NE", data = 3 },
+    }
+    
+local function getSelectedHouse()
+    local house
+    if GAMEPAD_COLLECTIONS_BOOK.currentList and GAMEPAD_COLLECTIONS_BOOK.currentList.list then 
+      selectedItem = GAMEPAD_COLLECTIONS_BOOK:GetCurrentTargetData()
+      if selectedItem and selectedItem.dataSource.categoryData and selectedItem.dataSource.categoryData.IsHousingCategory and not selectedItem.dataSource:IsLocked() then
+        house = ZO_COLLECTIBLE_DATA_MANAGER:GetCollectibleDataById(selectedItem.dataSource.collectibleId)
+      end
+    end
+    return house
+end
+
+HH.selectedHouse = getSelectedHouse()
+
 function HH.AddAssignHouse(newState)
+  local HH_Lang = HH.Lang
+  local UseExterior = false
+  local Icon, IconName, Category, CategoryName, SlotNum
+  HH.assignHouse = HH:CreateDialog(HH.Lang.HOTBAR_OPTIONS)
 
-  local entryData = ZO_GamepadEntryData:New(HH.Lang.WHEEL_APPLY)
-  entryData.setup = ZO_SharedGamepadEntry_OnSetup
-  entryData.callback = function()
-    ZO_Dialogs_ReleaseDialogOnButtonPress("HH_GAMEPAD_OWNED_HOUSE_DIALOG")
-  end
-  
-  ZO_Dialogs_RegisterCustomDialog("HH_GAMEPAD_OWNED_HOUSE_DIALOG",
-  {
-    gamepadInfo = {
-      dialogType = GAMEPAD_DIALOGS.PARAMETRIC,
-    },
-    setup = function(dialog)
-      dialog:setupFunc()
+  HH.assignHouse:AddSetting {
+    type = LAM.ST_LABEL,
+    label = function()
+      return HH_Lang.CREATE_QUICKSLOT
     end,
-    title = {
-      text = HH.Lang.HOTBAR_OPTIONS,
-    },
-    blockDialogReleaseOnPress = true, -- We'll handle Dialog Releases ourselves since we don't want DIALOG_PRIMARY to release the dialog on press.
+  }
+  HH.assignHouse:AddSetting {
+    type = LAM.ST_LABEL,
+    label = function()
+      return "|cebc034"..HH.selectedHouse:GetFormattedName().."|r"
+    end,
+  }
   
-    canQueue = true,
-    parametricList =
-	{
-		{
-			template = "ZO_CheckBoxTemplate_WithoutIndent_Gamepad",
-			templateData = {
-          text = HH.Lang.HOUSE_EXTERIOR,
-          setup = function(control, data, selected, reselectingDuringRebuild, enabled, active)
-              control.checkBox.dialog = data.dialog
-              ZO_GamepadCheckBoxTemplate_Setup(control, data, selected, reselectingDuringRebuild, enabled, active)
-          end,
-          checked = function(data)
-              return data.dialog.UseExterior or false
-          end,
-          setChecked = function(checkBox, checked)
-              checkBox.dialog.UseExterior = checked
-          end,
-          callback = function(dialog)
-              local targetControl = dialog.entryList:GetTargetControl()
-              ZO_GamepadCheckBoxTemplate_OnClicked(targetControl)
-          end,
-			  },
-		  },
-		  {
-				template = "ZO_GamepadItemEntryTemplate",
-				entryData = entryData,
-			}
-		},
-    buttons = {
-      {
-        keybind = "DIALOG_PRIMARY",
-        text = SI_GAMEPAD_SELECT_OPTION,
-        callback =  function(dialog)
-          local data = dialog.entryList:GetTargetData()
-          if data.callback then
-            data.callback(dialog)
-          end
-          if GAMEPAD_COLLECTIONS_BOOK.currentList and GAMEPAD_COLLECTIONS_BOOK.currentList.list then 
-            selectedItem = GAMEPAD_COLLECTIONS_BOOK:GetCurrentTargetData()
-            if selectedItem and selectedItem.dataSource:IsInstanceOf(ZO_CollectibleData) and selectedItem.dataSource.categoryData.IsHousingCategory then
-              local house = ZO_COLLECTIBLE_DATA_MANAGER:GetCollectibleDataById(selectedItem.dataSource.collectibleId)
-              HH.AssignLRM(house, dialog.UseExterior)
-            end
-          end
-        end,
-      },
-  
-      {
-        keybind = "DIALOG_NEGATIVE",
-        text = SI_DIALOG_CLOSE,
-        callback = function()
-          ZO_Dialogs_ReleaseDialogOnButtonPress("HH_GAMEPAD_OWNED_HOUSE_DIALOG")
-        end,
-      },
-    },
+  HH.assignHouse:AddSetting({
+    type = LAM.ST_DROPDOWN,
+    label = HH_Lang.WHEEL_CATEGORY,
+    items = wheelOptions,
+    getFunction = function() return CategoryName or GetString(SI_HOTBARCATEGORY10) end,
+    setFunction = function(var, itemName, itemData)
+      CategoryName = itemName
+      Category = tonumber(itemData.data)
+      HH.assignHouse:UpdateControls()
+    end,
+    default = GetString(SI_HOTBARCATEGORY10),
   })
-
---   if HH.assign == nil then
+  
+  HH.assignHouse:AddSetting {
+      type = LAM.ST_DROPDOWN,
+      label = HH_Lang.WHEEL_SLOT,
+      items = function()
+        if Category == LIBRADIAL_WHEEL then
+          local slotsObj = {}
+          for i = 1, LRM.vars.numSlots do 
+            table.insert(slotsObj, { name = tostring(i), data = i })
+          end
+          return slotsObj
+        else
+          return slotOptions
+        end
+      end,
+      getFunction = function() return EntryIndexName or tostring(#LRM.registeredEntries + 1) end,
+      setFunction = function(var, itemName, itemData)
+        EntryIndexName = itemName
+        EntryIndex = tonumber(itemData.data)
+      end,
+    }
+  
+  HH.assignHouse:AddSetting({
+    type = LAM.ST_ICONPICKER,
+    label = HH_Lang.WHEEL_ICON,
+    items = HH.IconList,
+    getFunction = function() return Icon  end,
+    setFunction = function(var, iconIndex, iconPath)
+      IconName = iconPath
+      Icon = iconIndex
+    end,
+  })
+  
+  HH.assignHouse:AddSetting({
+    type = LAM.ST_CHECKBOX,
+    label = HH.Lang.HOUSE_EXTERIOR,
+    default = false,
+    setFunction = function(state)
+        UseExterior = state
+    end,
+    getFunction = function()
+        return UseExterior
+    end
+  })
+  
+  HH.assignHouse:AddSetting {
+    type = LAM.ST_BUTTON,
+    label = HH_Lang.WHEEL_APPLY,
+    buttonText = HH_Lang.WHEEL_APPLY,
+    clickHandler  = function()
+      HH.SV.Command[Category or HOTBAR_CATEGORY_QUICKSLOT_WHEEL][EntryIndex or 4] = {
+        ["name"] = Name,
+        ["icon"] = IconName or HH.IconList[1],
+        ["house"] = HH.selectedHouse:GetReferenceId(),
+        ["exterior"] = UseExterior or false,
+        ["houseName"] = HH.selectedHouse:GetFormattedName(),
+        ["houseOwner"] = HH.selectedHouse.owner or "self",
+      }
+      Status = HH.Lang.STATUS_ADDED
+      HH.assignHouse:UpdateControls()
+    end
+  }
+  HH.assignHouse:AddSetting {
+    type = LAM.ST_LABEL,
+    label = function()
+      return Status or " "
+    end
+  }
     HH.assign = {
       alignment = KEYBIND_STRIP_ALIGN_LEFT,
       {
@@ -98,13 +200,13 @@ function HH.AddAssignHouse(newState)
           end
           end,
           callback = function()
-              ZO_Dialogs_ShowGamepadDialog("HH_GAMEPAD_OWNED_HOUSE_DIALOG")
+              HH.assignHouse:Show()
           end,
         },
       }
     KEYBIND_STRIP:AddKeybindButtonGroup(HH.assign)
     GAMEPAD_COLLECTIONS_BOOK.currentList.list:SetOnSelectedDataChangedCallback(function()
+        HH.selectedHouse = getSelectedHouse()
         KEYBIND_STRIP:UpdateKeybindButtonGroup(HH.assign)
     end)
---   end
 end
