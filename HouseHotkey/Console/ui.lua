@@ -127,7 +127,7 @@ function HH.AddAssignHouse(newState)
       type = LAM.ST_DROPDOWN,
       label = HH_Lang.WHEEL_SLOT,
       items = function()
-        if Category == LIBRADIAL_WHEEL then
+        if Category == LIBRADIAL_WHEEL and LRM ~= nil then
           local slotsObj = {}
           for i = 1, LRM.vars.numSlots do 
             table.insert(slotsObj, { name = tostring(i), data = i })
@@ -137,7 +137,7 @@ function HH.AddAssignHouse(newState)
           return slotOptions
         end
       end,
-      getFunction = function() return EntryIndexName or tostring(#LRM.registeredEntries + 1) end,
+      getFunction = function() return EntryIndexName end,
       setFunction = function(var, itemName, itemData)
         EntryIndexName = itemName
         EntryIndex = tonumber(itemData.data)
@@ -181,18 +181,9 @@ function HH.AddAssignHouse(newState)
         ["houseOwner"] = HH.selectedHouse.owner or "self",
         ["slotNum"] = EntryIndex
       }
-      if LRM ~= nil then
-        HH.AssignLRM(
-          HH.selectedHouse:GetFormattedName(), 
-          HH.selectedHouse:GetReferenceId(), 
-          IconName or HH.IconList[1], 
-          HH.selectedHouse.owner or "self", 
-          UseExterior, 
-          EntryIndex
-        )
-      end
       Status = HH.Lang.STATUS_ADDED
       HH.assignHouse:UpdateControls()
+      HH.settingsPanel:UpdateControls()
     end
   }
   HH.assignHouse:AddSetting {

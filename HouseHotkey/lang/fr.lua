@@ -29,5 +29,4 @@ HH.Lang = {
   ADD_TO_HOTBAR =             "Assign",
   HOTBAR_OPTIONS =            "Quickslot Options",
   LRM_WHEEL =                 "Addon Entries",
-  MODIFY_LRM =                "For Lib Radial Menu entries, please modify in the settings for that addon",
 }
