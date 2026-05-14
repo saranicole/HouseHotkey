@@ -91,6 +91,10 @@ local function OnPlayerActivated(eventCode)
         HOUSE_TOURS_SEARCH_MANAGER:ExecuteSearch(HOUSE_TOURS_LISTING_TYPE_FAVORITE)
     end
     zo_callLater(HH.BuildMenu, 1500)
+    
+    if IsConsoleUI() or IsInGamepadPreferredMode() then
+      HOUSE_TOURS_GAMEPAD.listingPanelFragment:RegisterCallback("StateChange", HH.HookHouseTours)
+    end
 end
 
 --When Loaded
@@ -153,7 +157,7 @@ function HH.HookWheel()
       if HH.SV.Command[Category] then
         New = HH.SV.Command[Category][Index]
       end
-      if New and Category ~= LIBRADIAL_WHEEL then
+      if New then
         Old(Self, New.name, New.icon, New.icon, function() HH.Execute(New.house, New.exterior, New.houseOwner) end, {name = New.name, slotNum = Index})
       else
         Old(Self, name, inactiveIcon, activeIcon, callback, data)

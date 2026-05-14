@@ -83,34 +83,48 @@ local function getSelectedHouse(data)
 end
 
 HH.selectedHouse = nil
+HH.selectedTourHouse = nil
 
-function HH.AddAssignHouse(newState)
+function HH.createPopup(targetHouse, owner)
+  if type(targetHouse) == "function" then
+    house = targetHouse()
+  else
+    house = targetHouse
+  end
+
   local HH_Lang = HH.Lang
   local UseExterior = false
   local Icon, IconName, Category, CategoryName, SlotNum
   
-  HH.selectedHouse = getSelectedHouse()
-  
-  HH.assignHouse = HH:CreateDialog(HH.Lang.HOTBAR_OPTIONS)
+  local panel = HH:CreateDialog(HH.Lang.HOTBAR_OPTIONS)
 
-  HH.assignHouse:AddSetting {
+  panel:AddSetting {
     type = LAM.ST_LABEL,
     label = function()
       return HH_Lang.CREATE_QUICKSLOT
     end,
   }
 
-  HH.assignHouse:AddSetting {
+  panel:AddSetting {
     type = LAM.ST_LABEL,
     label = function()
-      if HH.selectedHouse and HH.selectedHouse:GetFormattedName() then
-        return "|cebc034"..HH.selectedHouse:GetFormattedName().."|r"
+      if house and house:GetFormattedName() then
+        return "|cebc034"..house:GetFormattedName().."|r"
+      end
+      return ""
+    end,
+  }
+  panel:AddSetting {
+    type = LAM.ST_LABEL,
+    label = function()
+      if owner then
+        return "|c695d5c"..owner.."|r\r\n"
       end
       return ""
     end,
   }
   
-  HH.assignHouse:AddSetting({
+  panel:AddSetting({
     type = LAM.ST_DROPDOWN,
     label = HH_Lang.WHEEL_CATEGORY,
     items = wheelOptions,
@@ -118,12 +132,12 @@ function HH.AddAssignHouse(newState)
     setFunction = function(var, itemName, itemData)
       CategoryName = itemName
       Category = tonumber(itemData.data)
-      HH.assignHouse:UpdateControls()
+      panel:UpdateControls()
     end,
     default = GetString(SI_HOTBARCATEGORY10),
   })
   
-  HH.assignHouse:AddSetting {
+  panel:AddSetting {
       type = LAM.ST_DROPDOWN,
       label = HH_Lang.WHEEL_SLOT,
       items = function()
@@ -144,7 +158,7 @@ function HH.AddAssignHouse(newState)
       end,
     }
   
-  HH.assignHouse:AddSetting({
+  panel:AddSetting({
     type = LAM.ST_ICONPICKER,
     label = HH_Lang.WHEEL_ICON,
     items = HH.IconList,
@@ -155,7 +169,7 @@ function HH.AddAssignHouse(newState)
     end,
   })
   
-  HH.assignHouse:AddSetting({
+  panel:AddSetting({
     type = LAM.ST_CHECKBOX,
     label = HH.Lang.HOUSE_EXTERIOR,
     default = false,
@@ -167,18 +181,18 @@ function HH.AddAssignHouse(newState)
     end
   })
   
-  HH.assignHouse:AddSetting {
+  panel:AddSetting {
     type = LAM.ST_BUTTON,
     label = HH_Lang.WHEEL_APPLY,
     buttonText = HH_Lang.WHEEL_APPLY,
     clickHandler  = function()
       HH.SV.Command[Category or HOTBAR_CATEGORY_QUICKSLOT_WHEEL][EntryIndex or 4] = {
-        ["name"] = HH.selectedHouse:GetFormattedName(),
+        ["name"] = house:GetFormattedName(),
         ["icon"] = IconName or HH.IconList[1],
-        ["house"] = HH.selectedHouse:GetReferenceId(),
+        ["house"] = house:GetReferenceId(),
         ["exterior"] = UseExterior or false,
-        ["houseName"] = HH.selectedHouse:GetFormattedName(),
-        ["houseOwner"] = HH.selectedHouse.owner or "self",
+        ["houseName"] = house:GetFormattedName(),
+        ["houseOwner"] = house.owner or house:GetOwnerDisplayName() or "self",
         ["slotNum"] = EntryIndex
       }
       Status = HH.Lang.STATUS_ADDED
@@ -186,29 +200,36 @@ function HH.AddAssignHouse(newState)
       HH.settingsPanel:UpdateControls()
     end
   }
-  HH.assignHouse:AddSetting {
+  panel:AddSetting {
     type = LAM.ST_LABEL,
     label = function()
       return Status or " "
     end
   }
+  HH.assignHouse = panel
+end
+
+function HH.AddAssignHouse(newState)
+      
+    HH.selectedHouse = getSelectedHouse()
+    HH.createPopup(HH.selectedHouse)
     HH.assign = {
-      alignment = KEYBIND_STRIP_ALIGN_LEFT,
+      alignment = KEYBIND_STRIP_ALIGN_RIGHT,
       {
 
           name = HH.Lang.ADD_TO_HOTBAR,
           keybind = "UI_SHORTCUT_QUATERNARY",
           visible = function()
             if GAMEPAD_COLLECTIONS_BOOK.currentList and GAMEPAD_COLLECTIONS_BOOK.currentList.list then 
-            selectedItem = GAMEPAD_COLLECTIONS_BOOK:GetCurrentTargetData()
-            if selectedItem then
-              local house = ZO_COLLECTIBLE_DATA_MANAGER:GetCollectibleDataById(selectedItem.dataSource.collectibleId)
-              if house and not house:IsLocked() and selectedItem.dataSource.categoryData.IsHousingCategory then
-                return true
+              selectedItem = GAMEPAD_COLLECTIONS_BOOK:GetCurrentTargetData()
+              if selectedItem then
+                local house = ZO_COLLECTIBLE_DATA_MANAGER:GetCollectibleDataById(selectedItem.dataSource.collectibleId)
+                if house and not house:IsLocked() and selectedItem.dataSource.categoryData.IsHousingCategory then
+                  return true
+                end
               end
             end
             return false
-          end
           end,
           callback = function()
               HH.assignHouse:Show()
@@ -219,5 +240,29 @@ function HH.AddAssignHouse(newState)
     GAMEPAD_COLLECTIONS_BOOK.currentList.list:SetOnSelectedDataChangedCallback(function(list, selectedData)
         HH.selectedHouse = getSelectedHouse(selectedData)
         KEYBIND_STRIP:UpdateKeybindButtonGroup(HH.assign)
+    end)
+end
+
+function HH.HookHouseTours()
+      HH.assignTours = {
+      alignment = KEYBIND_STRIP_ALIGN_RIGHT,
+      {
+
+          name = HH.Lang.ADD_TO_HOTBAR,
+          keybind = "UI_SHORTCUT_LEFT_STICK",
+          callback = function()
+              HH.assignHouse:Show()
+          end,
+        },
+      }
+    KEYBIND_STRIP:AddKeybindButtonGroup(HH.assignTours)
+    ZO_PreHook(HOUSE_TOURS_GAMEPAD, "OnSelectionChanged", function(list, selectedItem, oldSelectedData)
+      KEYBIND_STRIP:UpdateKeybindButtonGroup(HH.assignTours)
+      if oldSelectedData and oldSelectedData.GetCollectibleData then
+        if not HH.assignHouse or HH.selectedTourHouse ~= oldSelectedData:GetCollectibleData() then
+          HH.selectedTourHouse = oldSelectedData:GetCollectibleData()
+          HH.createPopup(HH.selectedTourHouse, oldSelectedData:GetOwnerDisplayName())
+        end
+      end
     end)
 end
