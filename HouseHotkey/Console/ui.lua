@@ -254,6 +254,9 @@ function HH.HookHouseTours(newState)
           callback = function()
               HH.assignHouse:Show()
           end,
+          visible = function()
+            return HOUSE_TOURS_GAMEPAD:IsShowing()
+          end
         },
       }
     KEYBIND_STRIP:AddKeybindButtonGroup(HH.assignTours)
