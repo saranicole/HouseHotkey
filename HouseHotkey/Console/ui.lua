@@ -243,7 +243,7 @@ function HH.AddAssignHouse(newState)
     end)
 end
 
-function HH.HookHouseTours(newState)
+function HH.HookHouseTours(oldState, newState)
     if (newState == SCENE_FRAGMENT_SHOWING) and not HH.assignTours then
       HH.assignTours = {
       alignment = KEYBIND_STRIP_ALIGN_RIGHT,
