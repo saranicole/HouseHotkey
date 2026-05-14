@@ -127,6 +127,8 @@ end
 function HH.showAssignOnHousing(oldState, newState)
   if (newState == SCENE_FRAGMENT_SHOWING) and HH.AddAssignHouse then 
     HH.AddAssignHouse(newState)
+  elseif newState == SCENE_FRAGMENT_HIDDEN and HH.assign then
+    KEYBIND_STRIP:RemoveKeybindButtonGroup(HH.assign)
   end
 end
 
