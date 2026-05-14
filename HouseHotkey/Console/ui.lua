@@ -255,7 +255,7 @@ function HH.HookHouseTours(newState)
               HH.assignHouse:Show()
           end,
           visible = function()
-            return HOUSE_TOURS_GAMEPAD:IsShowing()
+            return newState == SCENE_FRAGMENT_SHOWING
           end
         },
       }
