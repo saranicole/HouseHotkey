@@ -92,7 +92,7 @@ local function OnPlayerActivated(eventCode)
     end
     zo_callLater(HH.BuildMenu, 1500)
     
-    if IsConsoleUI() or IsInGamepadPreferredMode() then
+    if IsConsoleUI() then
       HOUSE_TOURS_GAMEPAD.listingPanelFragment:RegisterCallback("StateChange", HH.HookHouseTours)
     end
 end
@@ -110,7 +110,7 @@ local function OnAddOnLoaded(eventCode, addonName)
   --Hook Wheels
   HH.HookWheel()
   EVENT_MANAGER:RegisterForEvent("HouseHotkey_PlayerActivated", EVENT_PLAYER_ACTIVATED, OnPlayerActivated)
-  if IsConsoleUI() or IsInGamepadPreferredMode() then
+  if IsConsoleUI() then
     GAMEPAD_COLLECTIONS_BOOK_HOUSING_PANEL_FRAGMENT:RegisterCallback("StateChange", HH.showAssignOnHousing)
   end
 end
@@ -125,7 +125,7 @@ function HH.SwitchSV()
 end
 
 function HH.showAssignOnHousing(oldState, newState)
-  if (newState == SCENE_FRAGMENT_SHOWING) then 
+  if (newState == SCENE_FRAGMENT_SHOWING) and HH.AddAssignHouse then 
     HH.AddAssignHouse(newState)
   end
 end
