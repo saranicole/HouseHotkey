@@ -210,9 +210,7 @@ function HH.createPopup(targetHouse, owner)
 end
 
 function HH.AddAssignHouse(newState)
-      
-    HH.selectedHouse = getSelectedHouse()
-    HH.createPopup(HH.selectedHouse)
+    HH.createPopup(getSelectedHouse)
     HH.assign = {
       alignment = KEYBIND_STRIP_ALIGN_RIGHT,
       {
