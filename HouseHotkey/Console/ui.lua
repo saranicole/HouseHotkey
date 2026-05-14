@@ -243,7 +243,8 @@ function HH.AddAssignHouse(newState)
     end)
 end
 
-function HH.HookHouseTours()
+function HH.HookHouseTours(newState)
+    if (newState == SCENE_FRAGMENT_SHOWING) and not HH.assignTours then
       HH.assignTours = {
       alignment = KEYBIND_STRIP_ALIGN_RIGHT,
       {
@@ -265,4 +266,7 @@ function HH.HookHouseTours()
         end
       end
     end)
+    elseif (newState == SCENE_FRAGMENT_HIDDEN) and HH.assignTours then
+        KEYBIND_STRIP:RemoveKeybindButtonGroup(HH.assignTours)
+    end
 end
