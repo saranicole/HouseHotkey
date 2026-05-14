@@ -198,7 +198,7 @@ function HH.createPopup(targetHouse, owner)
     buttonText = HH_Lang.WHEEL_APPLY,
     clickHandler  = function()
       HH.SV.Command[Category or HOTBAR_CATEGORY_QUICKSLOT_WHEEL][EntryIndex or 4] = {
-        ["name"] = Name,
+        ["name"] = Name or house:GetFormattedName(),
         ["icon"] = IconName or HH.IconList[1],
         ["house"] = house:GetReferenceId(),
         ["exterior"] = UseExterior or false,
