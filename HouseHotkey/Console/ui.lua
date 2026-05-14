@@ -210,7 +210,6 @@ function HH.createPopup(targetHouse, owner)
 end
 
 function HH.AddAssignHouse(newState)
-    HH.createPopup(getSelectedHouse)
     HH.assign = {
       alignment = KEYBIND_STRIP_ALIGN_RIGHT,
       {
@@ -236,7 +235,10 @@ function HH.AddAssignHouse(newState)
       }
     KEYBIND_STRIP:AddKeybindButtonGroup(HH.assign)
     GAMEPAD_COLLECTIONS_BOOK.currentList.list:SetOnSelectedDataChangedCallback(function(list, selectedData)
-        HH.selectedHouse = getSelectedHouse(selectedData)
+        if not HH.assignHouse or HH.selectedHouse ~= getSelectedHouse(selectedData) then
+          HH.selectedHouse = getSelectedHouse(selectedData)
+          HH.createPopup(HH.selectedHouse)
+        end
         KEYBIND_STRIP:UpdateKeybindButtonGroup(HH.assign)
     end)
 end
