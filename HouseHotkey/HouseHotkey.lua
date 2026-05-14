@@ -1,9 +1,18 @@
 --Name Space
-HouseHotkey = {}
 local HH = HouseHotkey
 
 --Basic Info
 HH.Name = "HouseHotkey"
+
+local LRM = LibRadialMenu
+
+local LIBRADIAL_WHEEL = HOTBAR_CATEGORY_MAX_VALUE + 100
+
+local collectionsScene = "gamepadCollectionsBook"
+
+local addonId = string.lower(HH.Name)
+
+HH.settingsPanel = nil
 
 --Setting
 HH.Default = {
@@ -14,8 +23,21 @@ HH.Default = {
     [HOTBAR_CATEGORY_MEMENTO_WHEEL] = {},
     [HOTBAR_CATEGORY_TOOL_WHEEL] = {},
     [HOTBAR_CATEGORY_EMOTE_WHEEL] = {},
+    [LIBRADIAL_WHEEL] = {},
   },
 }
+
+local wheelOptions = {
+  { name = GetString(SI_HOTBARCATEGORY10), data = HOTBAR_CATEGORY_QUICKSLOT_WHEEL},
+  { name = GetString(SI_HOTBARCATEGORY13), data = HOTBAR_CATEGORY_ALLY_WHEEL},
+  { name = GetString(SI_HOTBARCATEGORY12), data = HOTBAR_CATEGORY_MEMENTO_WHEEL},
+  { name = GetString(SI_HOTBARCATEGORY14), data = HOTBAR_CATEGORY_TOOL_WHEEL},
+  { name = GetString(SI_HOTBARCATEGORY11), data = HOTBAR_CATEGORY_EMOTE_WHEEL},
+}
+
+if LRM ~= nil then
+  table.insert(wheelOptions, { name = HH.Lang.LRM_WHEEL, data = LIBRADIAL_WHEEL})
+end
 
 local PREVIEW_PRELOADED_HOUSES = {
   1060,   -- Mara's Kiss Public House
@@ -40,21 +62,27 @@ local PREVIEW_PRELOADED_HOUSES = {
   1310,   -- Exorcised Coven Cottage
 }
 
+local slotOptions = {
+      { name = "1 - N", data = 4 },
+      { name = "2 - NW", data = 5 },
+      { name = "3 - W", data = 6 },
+      { name = "4 - SW", data = 7 },
+      { name = "5 - S", data = 8 },
+      { name = "6 - SE", data = 1 },
+      { name = "7 - E", data = 2 },
+      { name = "8 - NE", data = 3 },
+    }
 
---[[ Structure
-
-  [HOTBAR_CATEGORY_XX] = {
-    [EntryIndex] = {
-      name = "",
-      icon = "",
-      house = "",
-      exterior = "",
-    },
-    ...
-  }
-  
---]]
-
+local slotMapped = {
+  [1] = "6 - SE",
+  [2] = "7 - E",
+  [3] = "8 - NE",
+  [4] = "1 - N",
+  [5] = "2 - NW",
+  [6] = "3 - W",
+  [7] = "4 - SW",
+  [8] = "5 - S",
+}
 
 local function OnPlayerActivated(eventCode)
     EVENT_MANAGER:UnregisterForEvent("HouseHotkey_PlayerActivated", EVENT_PLAYER_ACTIVATED)
@@ -63,6 +91,10 @@ local function OnPlayerActivated(eventCode)
         HOUSE_TOURS_SEARCH_MANAGER:ExecuteSearch(HOUSE_TOURS_LISTING_TYPE_FAVORITE)
     end
     zo_callLater(HH.BuildMenu, 1500)
+    
+    if IsConsoleUI() then
+      HOUSE_TOURS_GAMEPAD.listingPanelFragment:RegisterCallback("StateChange", HH.HookHouseTours)
+    end
 end
 
 --When Loaded
@@ -74,11 +106,13 @@ local function OnAddOnLoaded(eventCode, addonName)
   HH.AV = ZO_SavedVars:NewAccountWide("HouseHotkey_Vars", 1, nil, HH.Default)
   HH.CV = ZO_SavedVars:NewCharacterIdSettings("HouseHotkey_Vars", 1, nil, HH.Default)
   HH.SwitchSV()
-  
+
   --Hook Wheels
   HH.HookWheel()
   EVENT_MANAGER:RegisterForEvent("HouseHotkey_PlayerActivated", EVENT_PLAYER_ACTIVATED, OnPlayerActivated)
-
+  if IsConsoleUI() then
+    GAMEPAD_COLLECTIONS_BOOK_HOUSING_PANEL_FRAGMENT:RegisterCallback("StateChange", HH.showAssignOnHousing)
+  end
 end
 
 --Account/Character Setting
@@ -87,6 +121,12 @@ function HH.SwitchSV()
     HH.SV = HH.CV
   else
     HH.SV = HH.AV
+  end
+end
+
+function HH.showAssignOnHousing(oldState, newState)
+  if (newState == SCENE_FRAGMENT_SHOWING) and HH.AddAssignHouse then 
+    HH.AddAssignHouse(newState)
   end
 end
 
@@ -102,7 +142,7 @@ function HH.HookWheel()
           New = HH.SV.Command[Category][Index]
         end
         if New then
-          Old(Self, New.name, New.icon, New.icon, function() HH.Execute(New.house, New.exterior, New.houseOwner) end, {name = New.name, slotNum = Index})
+          Old(Self, New.name, New.icon, New.icon, function() HH.Execute(New.house, New.exterior, New.houseOwner) end, {name = New.name, slotNum = Index})  
         else
           Old(Self, name, inactiveIcon, activeIcon, callback, data)
         end
@@ -255,6 +295,7 @@ function HH.Part(Index)
   local Positons = {"1 - N    ", "2 - NW", "3 - W   ", "4 - SW", "5 - S    ", "6 - SE  ", "7 - E    ", "8 - NE "}
   local Order = {4, 5, 6, 7, 8, 1, 2, 3}
   local StringList = {SI_HOTBARCATEGORY10, SI_HOTBARCATEGORY11, SI_HOTBARCATEGORY12, SI_HOTBARCATEGORY13, SI_HOTBARCATEGORY14}
+  
   local Tep = GetString(StringList[Index - 9]).."\r\n  "
   if HH.SV.Command[Index] then
 
@@ -292,7 +333,6 @@ local LAM = LibHarvensAddonSettings
 function HH.BuildMenu()
   local houseItems = HH.GetHouseDropdownChoices()
   local HH_Lang = HH.Lang
-  local HH_Part = HH.Part
 
   local panel = LAM:AddAddon(HH.Name, {
     allowDefaults = false,  -- Show "Reset to Defaults" button
@@ -321,13 +361,7 @@ if #houseItems > 0 then
   panel:AddSetting {
     type = LAM.ST_DROPDOWN,
     label = HH_Lang.WHEEL_CATEGORY,
-    items = {
-      { name = GetString(SI_HOTBARCATEGORY10), data = HOTBAR_CATEGORY_QUICKSLOT_WHEEL},
-      { name = GetString(SI_HOTBARCATEGORY13), data = HOTBAR_CATEGORY_ALLY_WHEEL},
-      { name = GetString(SI_HOTBARCATEGORY12), data = HOTBAR_CATEGORY_MEMENTO_WHEEL},
-      { name = GetString(SI_HOTBARCATEGORY14), data = HOTBAR_CATEGORY_TOOL_WHEEL},
-      { name = GetString(SI_HOTBARCATEGORY11), data = HOTBAR_CATEGORY_EMOTE_WHEEL},
-    },
+    items = wheelOptions,
     getFunction = function() return CategoryName or GetString(SI_HOTBARCATEGORY10) end,
     setFunction = function(var, itemName, itemData)
       CategoryName = itemName
@@ -339,22 +373,22 @@ if #houseItems > 0 then
   panel:AddSetting {
     type = LAM.ST_DROPDOWN,
     label = HH_Lang.WHEEL_SLOT,
-    items = {
-      { name = "1 - N", data = 4 },
-      { name = "2 - NW", data = 5 },
-      { name = "3 - W", data = 6 },
-      { name = "4 - SW", data = 7 },
-      { name = "5 - S", data = 8 },
-      { name = "6 - SE", data = 1 },
-      { name = "7 - E", data = 2 },
-      { name = "8 - NE", data = 3 },
-    },
+    items = function()
+      if Category == LIBRADIAL_WHEEL and LRM ~= nil then
+        local slotsObj = {}
+        for i = 1, LRM.vars.numSlots do 
+          table.insert(slotsObj, { name = tostring(i), data = i })
+        end
+        return slotsObj
+      else
+        return slotOptions
+      end
+    end,
     getFunction = function() return EntryIndexName or "1 - N" end,
     setFunction = function(var, itemName, itemData)
       EntryIndexName = itemName
       EntryIndex = tonumber(itemData.data)
     end,
-    default = "1 - N",
   }
   --Icon Select
   panel:AddSetting {
@@ -440,61 +474,87 @@ if #houseItems > 0 then
       return Status or " "
     end
   }
-  if ZO_IsConsoleUI() then
     --Configured
     panel:AddSetting {
       type = LAM.ST_SECTION,
       label = HH_Lang.WHEEL_DESC,
     }
-    panel:AddSetting {
-      type = LAM.ST_LABEL,
-      label = function()
-        return table.concat({
-          HH_Part(HOTBAR_CATEGORY_QUICKSLOT_WHEEL),
-          HH_Part(HOTBAR_CATEGORY_ALLY_WHEEL),
-          HH_Part(HOTBAR_CATEGORY_MEMENTO_WHEEL),
-          HH_Part(HOTBAR_CATEGORY_TOOL_WHEEL),
-          HH_Part(HOTBAR_CATEGORY_EMOTE_WHEEL)
-        })
+    
+    local function retrieveCategory()
+      local configured = {}
+      for category in pairs(HH.SV.Command) do 
+        if next(HH.SV.Command[category]) then
+          local catName
+          if category == LIBRADIAL_WHEEL then
+            catName = HH_Lang.LRM_WHEEL
+          else
+            catName = GetString(_G["SI_HOTBARCATEGORY"..tostring(category)])
+          end
+          table.insert(configured, { name = catName, data = category })
+        end
       end
-    }
-  end
+      return configured
+    end
+    
   --Category
   panel:AddSetting {
     type = LAM.ST_DROPDOWN,
     label = HH_Lang.WHEEL_CATEGORY,
-    items = {
-      { name = GetString(SI_HOTBARCATEGORY10), data = HOTBAR_CATEGORY_QUICKSLOT_WHEEL},
-      { name = GetString(SI_HOTBARCATEGORY13), data = HOTBAR_CATEGORY_ALLY_WHEEL},
-      { name = GetString(SI_HOTBARCATEGORY12), data = HOTBAR_CATEGORY_MEMENTO_WHEEL},
-      { name = GetString(SI_HOTBARCATEGORY14), data = HOTBAR_CATEGORY_TOOL_WHEEL},
-      { name = GetString(SI_HOTBARCATEGORY11), data = HOTBAR_CATEGORY_EMOTE_WHEEL},
-    },
+    items = function() return retrieveCategory() end,
     getFunction = function() return CategoryName2 or GetString(SI_HOTBARCATEGORY10) end,
     setFunction = function(var, itemName, itemData)
       CategoryName2 = itemName
       Category2 = tonumber(itemData.data)
+      panel:UpdateControls()
     end,
-    default = GetString(SI_HOTBARCATEGORY10),
   }
+  
+  local function retrieveConfigured(category)
+      local configured = {}
+      if not category then
+        category = retrieveCategory()
+        if next(category) then
+          local jDex, ent = next(category)
+          category = ent.data
+        end
+      end
+      if not category then return configured end
+      if next(HH.SV.Command[category]) then
+        for index, entry in pairs(HH.SV.Command[category]) do
+          local slotLocation
+          if category == LIBRADIAL_WHEEL then
+            slotLocation = tostring(index)
+          else 
+            slotLocation = slotMapped[index]
+          end
+          local owner
+          if entry.houseOwner == "self" then
+            owner = GetDisplayName()
+          else
+            owner = entry.houseOwner
+          end
+          table.insert(configured, { name = slotLocation..": "..entry.name..", "..owner, data = index })
+        end
+      end
+      return configured
+  end
+  
   --Index
   local entryIndexDropdown = panel:AddSetting {
     type = LAM.ST_DROPDOWN,
     label = HH_Lang.WHEEL_SLOT,
-    items = {
-      { name = "1 - N", data = 4 },
-      { name = "2 - NW", data = 5 },
-      { name = "3 - W", data = 6 },
-      { name = "4 - SW", data = 7 },
-      { name = "5 - S", data = 8 },
-      { name = "6 - SE", data = 1 },
-      { name = "7 - E", data = 2 },
-      { name = "8 - NE", data = 3 },
-    },
-    getFunction = function() return EntryIndexName2 or "1 - N" end,
+    items = function() return retrieveConfigured(Category2) end,
+    getFunction = function() 
+      return EntryIndexName2
+    end,
     setFunction = function(var, itemName, itemData)
       EntryIndexName2 = itemName
-      EntryIndex2 = tonumber(itemData.data)
+      if type(itemData.data) == "number" then
+        EntryIndex2 = itemData.data
+      else
+        EntryIndex2 = tonumber(itemData.data)
+      end
+
     end,
   }
   --Empty
@@ -513,6 +573,20 @@ if #houseItems > 0 then
     label = HH_Lang.WHEEL_DELETE,
     buttonText = HH_Lang.WHEEL_DELETE,
     clickHandler = function()
+      if Category2 == nil then
+        local category = retrieveCategory()
+        if next(category) then
+          local jDex, ent = next(category)
+          Category2 = ent.data
+        end
+      end
+      if EntryIndex2 == nil then
+        local configured = retrieveConfigured(Category2)
+        if next(configured) then
+          local iDex, entry = next(configured)
+          EntryIndex2 = entry.data
+        end
+      end
       if EntryIndex2 then
         HH.SV.Command[Category2 or HOTBAR_CATEGORY_QUICKSLOT_WHEEL][EntryIndex2] = nil
         panel:UpdateControls()
@@ -522,36 +596,54 @@ if #houseItems > 0 then
       end
     end,
   }
-  if not ZO_IsConsoleUI() then
-    --Configured
-    panel:AddSetting {
-      type = LAM.ST_SECTION,
-      label = HH_Lang.WHEEL_DESC,
+  panel:AddSetting {
+      type = LAM.ST_LABEL,
+      label = function()
+        local configured = ""
+        for category in pairs(HH.SV.Command) do 
+          local catName
+          if category == LIBRADIAL_WHEEL then
+            catName = HH_Lang.LRM_WHEEL
+          else
+            catName = GetString(_G["SI_HOTBARCATEGORY"..tostring(category)])
+          end
+          configured = configured .. "|cebc034"..catName.."|r\r\n"
+          if next(HH.SV.Command[category]) then
+            for index, entry in pairs(HH.SV.Command[category]) do
+              local slotLocation
+              if category == LIBRADIAL_WHEEL then
+                slotLocation = tostring(index)
+              else 
+                slotLocation = slotMapped[index]
+              end
+              local owner
+              if entry.houseOwner == "self" then
+                owner = GetDisplayName()
+              else
+                owner = entry.houseOwner
+              end
+              local InOrOut = HH.Lang.HOUSE_INSIDE
+              if entry.exterior then
+                InOrOut = HH.Lang.HOUSE_OUTSIDE
+              end
+              configured = configured .. "|t48:48:"..tostring(entry.icon).."|t  " .. slotLocation..": "..entry.name..", "..owner.." - "..InOrOut.."|r\r\n"
+            end
+          end
+        end
+        return configured
+      end
     }
     panel:AddSetting {
       type = LAM.ST_LABEL,
-      label = function()
-        return table.concat({
-          HH_Part(HOTBAR_CATEGORY_QUICKSLOT_WHEEL),
-          HH_Part(HOTBAR_CATEGORY_ALLY_WHEEL),
-          HH_Part(HOTBAR_CATEGORY_MEMENTO_WHEEL),
-          HH_Part(HOTBAR_CATEGORY_TOOL_WHEEL),
-          HH_Part(HOTBAR_CATEGORY_EMOTE_WHEEL)
-        })
-      end
+      label = ""
     }
-  end
-  --Breakpoint
-  panel:AddSetting {
-    type = LAM.ST_SECTION,
-    label = " ",
-  }
   else
     panel:AddSetting {
       type = LAM.ST_LABEL,
       label = HH_Lang.NO_HOUSES,
     }
   end
+  HH.settingsPanel = panel
 end
 
 -- Start Here
