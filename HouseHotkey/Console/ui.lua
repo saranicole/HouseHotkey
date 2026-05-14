@@ -94,7 +94,7 @@ function HH.createPopup(targetHouse, owner)
 
   local HH_Lang = HH.Lang
   local UseExterior = false
-  local Icon, IconName, Category, CategoryName, SlotNum
+  local Name, Icon, IconName, Category, CategoryName, SlotNum
   
   local panel = HH:CreateDialog(HH.Lang.HOTBAR_OPTIONS)
 
@@ -169,6 +169,14 @@ function HH.createPopup(targetHouse, owner)
     end,
   })
   
+  panel:AddSetting {
+    type = LAM.ST_EDIT,
+    label = HH_Lang.WHEEL_NAME,
+    getFunction = function() return Name or house:GetFormattedName() or "" end,
+    setFunction = function(text) Name = text end,
+    default = house:GetFormattedName()
+  }
+  
   panel:AddSetting({
     type = LAM.ST_CHECKBOX,
     label = HH.Lang.HOUSE_EXTERIOR,
@@ -178,6 +186,9 @@ function HH.createPopup(targetHouse, owner)
     end,
     getFunction = function()
         return UseExterior
+    end,
+    disable = function()
+      return owner ~= "self"
     end
   })
   
@@ -237,14 +248,14 @@ function HH.AddAssignHouse(newState)
     GAMEPAD_COLLECTIONS_BOOK.currentList.list:SetOnSelectedDataChangedCallback(function(list, selectedData)
         if not HH.assignHouse or HH.selectedHouse ~= getSelectedHouse(selectedData) then
           HH.selectedHouse = getSelectedHouse(selectedData)
-          HH.createPopup(HH.selectedHouse)
+          HH.createPopup(HH.selectedHouse, "self")
         end
         KEYBIND_STRIP:UpdateKeybindButtonGroup(HH.assign)
     end)
 end
 
 function HH.HookHouseTours(oldState, newState)
-    if (newState == SCENE_FRAGMENT_SHOWING) and not HH.assignTours then
+    if (newState == SCENE_FRAGMENT_SHOWING) then
       HH.assignTours = {
       alignment = KEYBIND_STRIP_ALIGN_RIGHT,
       {

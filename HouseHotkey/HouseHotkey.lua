@@ -446,6 +446,9 @@ if #houseItems > 0 then
       UseExterior = var
     end,
     default = false,
+    disable = function()
+      return HouseOwner ~= "self"
+    end
   }
   --Apply
   panel:AddSetting {
