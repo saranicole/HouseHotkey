@@ -192,7 +192,7 @@ function HH.createPopup(targetHouse, owner)
         ["house"] = house:GetReferenceId(),
         ["exterior"] = UseExterior or false,
         ["houseName"] = house:GetFormattedName(),
-        ["houseOwner"] = house.owner or house:GetOwnerDisplayName() or "self",
+        ["houseOwner"] = house.owner or owner or "self",
         ["slotNum"] = EntryIndex
       }
       Status = HH.Lang.STATUS_ADDED
