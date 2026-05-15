@@ -226,7 +226,7 @@ function HH.AddAssignHouse(newState)
       {
 
           name = HH.Lang.ADD_TO_HOTBAR,
-          keybind = "UI_SHORTCUT_QUATERNARY",
+          keybind = "UI_SHORTCUT_LEFT_STICK",
           visible = function()
             if GAMEPAD_COLLECTIONS_BOOK.currentList and GAMEPAD_COLLECTIONS_BOOK.currentList.list then 
               selectedItem = GAMEPAD_COLLECTIONS_BOOK:GetCurrentTargetData()
