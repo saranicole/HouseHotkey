@@ -1,3 +1,6 @@
+## 2026.05.27
+- Fix bug with nil check
+
 ## 2026.05.15
 - Make context button consistent
 

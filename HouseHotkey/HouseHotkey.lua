@@ -524,7 +524,7 @@ if #houseItems > 0 then
         end
       end
       if not category then return configured end
-      if next(HH.SV.Command[category]) then
+      if HH.SV.Command[category] and next(HH.SV.Command[category]) then
         for index, entry in pairs(HH.SV.Command[category]) do
           local slotLocation
           if category == LIBRADIAL_WHEEL then
