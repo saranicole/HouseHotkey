@@ -1,3 +1,7 @@
+## 2026.11.14
+- Fix bugs with var declaration
+- Update for u52
+
 ## 2026.05.27
 - Fix bug with nil check
 
